@@ -30683,6 +30683,7 @@ Error generating stack: ` +
             killAll: "\u0412\u0440\u0430\u0433\u0438: \u043F\u043E\u0433\u0438\u0431\u0430\u044E\u0442 / \u043E\u0436\u0438\u0432\u0430\u044E\u0442",
             finish: "\u041F\u0440\u0438 \u0441\u043C\u0435\u0440\u0442\u0438 (FINISH HIM)",
             logo: "\u041B\u043E\u0433\u043E\u0442\u0438\u043F MK3",
+            crt: "\u042D\u0444\u0444\u0435\u043A\u0442 \u042D\u041B\u0422 \u0432\u043A\u043B / \u0432\u044B\u043A\u043B",
             reset: "\u041D\u0430 \u0441\u0442\u0430\u0440\u0442",
             toggleMode:
               "\u041A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 / \u0443\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435",
@@ -30702,6 +30703,7 @@ Error generating stack: ` +
             killAll: 17,
             finish: 18,
             logo: 19,
+            crt: 20,
             reset: 8,
             toggleMode: 9,
             fullscreen: 10,
@@ -30898,7 +30900,7 @@ Error generating stack: ` +
                             let ae = E.mapping[re];
                             X.buttons[ae]?.pressed && !w[ae] && I.current(ne);
                           }
-                        for (let re of ["reset", "fullscreen", "hide", "toggleMode", "aiToggle", "killAll", "finish", "logo"]) {
+                        for (let re of ["reset", "fullscreen", "hide", "toggleMode", "aiToggle", "killAll", "finish", "logo", "crt"]) {
                           let ne = E.mapping[re];
                           X.buttons[ne]?.pressed &&
                             !w[ne] &&
@@ -30910,6 +30912,8 @@ Error generating stack: ` +
                                   ? (window.__ssFinish = !0)
                                   : re === "logo"
                                     ? (window.__ssLogoToggle = !0)
+                                    : re === "crt"
+                                    ? window.__ssCrtToggle?.()
                                     : I.current(re));
                         }
                         let J = k(E.mapping.zoom);
@@ -31735,7 +31739,7 @@ Error generating stack: ` +
                       S.stroke()),
                     S.restore());
                 }
-                (window.__ssDrawFx && window.__ssDrawFx(S, K.scale * E), S.restore(), window.__ssDrawOverlay && window.__ssDrawOverlay(S), (b = requestAnimationFrame(Y)));
+                (window.__ssDrawFx && window.__ssDrawFx(S, K.scale * E), S.restore(), window.__ssDrawOverlay && window.__ssDrawOverlay(S), window.__ssCRT && window.__ssCRT(S, K, E), (b = requestAnimationFrame(Y)));
               }
               return (
                 (b = requestAnimationFrame(Y)),
@@ -38982,6 +38986,13 @@ Error generating stack: ` +
                     (0, D.jsxs)("div", {
                       className: "more-actions",
                       children: [
+                        (0, D.jsx)(ce, {
+                          variant: "outline",
+                          onClick: () => {
+                            (X(!1), window.__ssCrtPanel?.());
+                          },
+                          children: "\u042D\u0444\u0444\u0435\u043A\u0442 \u042D\u041B\u0422 (\u0441\u043A\u0430\u043D\u043B\u0430\u0439\u043D\u044B)",
+                        }),
                         (0, D.jsxs)(ce, {
                           variant: "outline",
                           onClick: () => {
@@ -39768,6 +39779,83 @@ lucide-react/dist/esm/lucide-react.mjs:
       g.drawImage(img, Math.round(-w / 2), Math.round(oy), w, h); g.restore();
     }
   };
+})();
+</script>
+<script>(function () {
+  var DEF = { on: true, gap: 25, soft: 40, glow: 80 };
+  var st = Object.assign({}, DEF);
+  try { Object.assign(st, JSON.parse(localStorage.getItem("ss-crt") || "{}")); } catch (e) {}
+  function save() { try { localStorage.setItem("ss-crt", JSON.stringify(st)); } catch (e) {} }
+  var pat = null, patKey = "", src = document.createElement("canvas"), s1 = document.createElement("canvas"), s2 = document.createElement("canvas");
+  function pattern(g, P) {
+    var key = P + "|" + st.gap + "|" + st.soft;
+    if (pat && patKey === key) return pat;
+    var H = Math.max(2, P), c = document.createElement("canvas"); c.width = 1; c.height = H;
+    var x = c.getContext("2d"), d = x.createImageData(1, H), gap = st.gap / 100, b = Math.max(0.001, (st.soft / 100) * 0.25);
+    for (var r = 0; r < H; r++) {
+      var p = (r + 0.5) / H, e = 1 - gap;
+      var m = p < e - b ? 1 : p > e + b ? 0 : 1 - (p - (e - b)) / (2 * b);
+      var m2 = p < b ? 0.5 + (0.5 * p) / b : 1;
+      var v = Math.round(255 * Math.min(m, st.soft > 0 ? m2 : 1));
+      d.data[r * 4] = d.data[r * 4 + 1] = d.data[r * 4 + 2] = v; d.data[r * 4 + 3] = 255;
+    }
+    x.putImageData(d, 0, 0); pat = g.createPattern(c, "repeat"); patKey = key; return pat;
+  }
+  window.__ssCRT = function (g, K, E) {
+    if (!st.on) return;
+    var c = g.canvas, W = c.width, H = c.height; if (!W || !H) return;
+    var P = Math.max(1, Math.round(K.scale * E));
+    if (st.glow > 0) { if (src.width !== W || src.height !== H) { src.width = W; src.height = H; } src.getContext("2d").drawImage(c, 0, 0); }
+    g.save();
+    if (st.gap > 0) {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.translate(Math.round(K.ox * E), Math.round(K.oy * E)); g.rotate((K.rotation * Math.PI) / 180);
+      g.globalCompositeOperation = "multiply"; g.fillStyle = pattern(g, P);
+      var R = W + H; g.fillRect(-R, -R - (R % P), 2 * R, 2 * R);
+    }
+    if (st.glow > 0) {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      var f1 = Math.max(2, Math.round(P * 1.8)), f2 = Math.max(4, Math.round(P * 5));
+      s1.width = Math.max(1, Math.round(W / f1)); s1.height = Math.max(1, Math.round(H / f1));
+      s2.width = Math.max(1, Math.round(W / f2)); s2.height = Math.max(1, Math.round(H / f2));
+      var a = s1.getContext("2d"), b2 = s2.getContext("2d");
+      a.imageSmoothingEnabled = b2.imageSmoothingEnabled = !0; a.imageSmoothingQuality = b2.imageSmoothingQuality = "high";
+      a.drawImage(src, 0, 0, s1.width, s1.height); b2.drawImage(s1, 0, 0, s2.width, s2.height);
+      g.imageSmoothingEnabled = !0; g.imageSmoothingQuality = "high"; g.globalCompositeOperation = "screen";
+      var k = st.glow / 100;
+      g.globalAlpha = Math.min(1, 0.7 * k); g.drawImage(s1, 0, 0, W, H);
+      g.globalAlpha = Math.min(1, 0.5 * k); g.drawImage(s2, 0, 0, W, H);
+    }
+    g.restore();
+  };
+  // settings panel
+  var css = document.createElement("style");
+  css.textContent = "#ss-crt{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;background:#111;color:#eee;border:1px solid #444;border-radius:14px;padding:18px 20px;width:min(360px,92vw);font:14px/1.4 system-ui,sans-serif;box-shadow:0 10px 40px #000}" +
+    "#ss-crt[hidden]{display:none}#ss-crt h3{margin:0 0 12px;font-size:16px}#ss-crt label{display:block;margin:12px 0 4px}#ss-crt input[type=range]{width:100%}" +
+    "#ss-crt .row{display:flex;gap:8px;margin-top:14px}#ss-crt button{flex:1;padding:10px;border-radius:10px;border:1px solid #555;background:#222;color:#eee;font:inherit}#ss-crt button.on{background:#7c3aed;border-color:#7c3aed}";
+  document.head.appendChild(css);
+  var p = document.createElement("div"); p.id = "ss-crt"; p.hidden = true;
+  p.innerHTML = '<h3>Эффект ЭЛТ (сканлайны + свечение)</h3>' +
+    '<div class="row" style="margin-top:0"><button data-k="on"></button></div>' +
+    '<label>Толщина полос: <b data-v="gap"></b>%</label><input type="range" min="0" max="60" data-r="gap">' +
+    '<label>Размытие полос: <b data-v="soft"></b>%</label><input type="range" min="0" max="100" data-r="soft">' +
+    '<label>Свечение: <b data-v="glow"></b>%</label><input type="range" min="0" max="150" data-r="glow">' +
+    '<div class="row"><button data-k="reset">По умолчанию</button><button data-k="close">Закрыть</button></div>';
+  document.body.appendChild(p);
+  function sync() {
+    var b = p.querySelector('[data-k="on"]'); b.textContent = st.on ? "Включено" : "Выключено"; b.className = st.on ? "on" : "";
+    ["gap", "soft", "glow"].forEach(function (k) { p.querySelector('[data-r="' + k + '"]').value = st[k]; p.querySelector('[data-v="' + k + '"]').textContent = st[k]; });
+  }
+  p.addEventListener("input", function (e) { var k = e.target.getAttribute("data-r"); if (k) { st[k] = +e.target.value; save(); sync(); } });
+  p.addEventListener("click", function (e) {
+    var k = e.target.getAttribute("data-k");
+    if (k === "on") st.on = !st.on; else if (k === "reset") st = Object.assign({}, DEF); else if (k === "close") p.hidden = true;
+    save(); sync();
+  });
+  window.__ssCrtPanel = function () { sync(); p.hidden = false; };
+  window.__ssCrtToggle = function () { st.on = !st.on; save(); sync(); };
+  addEventListener("keydown", function (e) { var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return; if (!e.repeat && e.code === "KeyC") window.__ssCrtToggle(); });
+  sync();
 })();
 </script>
 </body>
