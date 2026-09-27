@@ -30686,6 +30686,7 @@ Error generating stack: ` +
             crt: "\u042D\u0444\u0444\u0435\u043A\u0442 \u042D\u041B\u0422 \u0432\u043A\u043B / \u0432\u044B\u043A\u043B",
             waves: "\u0412\u043E\u043B\u043D\u044B \u0432\u0440\u0430\u0433\u043E\u0432 Castlevania \u0432\u043A\u043B / \u0432\u044B\u043A\u043B",
             dracVanish: "\u0414\u0440\u0430\u043A\u0443\u043B\u0430: \u0438\u0441\u0447\u0435\u0437\u043D\u0443\u0442\u044C / \u043F\u043E\u044F\u0432\u0438\u0442\u044C\u0441\u044F",
+            battle: "\u0411\u0438\u0442\u0432\u0430 \u0441 \u0414\u0440\u0430\u043A\u0443\u043B\u043E\u0439 \u0432\u043A\u043B / \u0432\u044B\u043A\u043B",
             reset: "\u041D\u0430 \u0441\u0442\u0430\u0440\u0442",
             toggleMode:
               "\u041A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 / \u0443\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435",
@@ -30708,6 +30709,7 @@ Error generating stack: ` +
             crt: 20,
             waves: 21,
             dracVanish: 22,
+            battle: 23,
             reset: 8,
             toggleMode: 9,
             fullscreen: 10,
@@ -30904,7 +30906,7 @@ Error generating stack: ` +
                             let ae = E.mapping[re];
                             X.buttons[ae]?.pressed && !w[ae] && I.current(ne);
                           }
-                        for (let re of ["reset", "fullscreen", "hide", "toggleMode", "aiToggle", "killAll", "finish", "logo", "crt", "waves", "dracVanish"]) {
+                        for (let re of ["reset", "fullscreen", "hide", "toggleMode", "aiToggle", "killAll", "finish", "logo", "crt", "waves", "dracVanish", "battle"]) {
                           let ne = E.mapping[re];
                           X.buttons[ne]?.pressed &&
                             !w[ne] &&
@@ -30922,6 +30924,8 @@ Error generating stack: ` +
                                     ? window.__ssWavesToggle?.()
                                     : re === "dracVanish"
                                     ? (window.__ssDracVanish = !0)
+                                    : re === "battle"
+                                    ? window.__ssBattleToggle?.()
                                     : I.current(re));
                         }
                         let J = k(E.mapping.zoom);
@@ -31149,7 +31153,7 @@ Error generating stack: ` +
               let k = Hm(c, i.scale, s).ratio,
                 ac = this.actor(u),
                 cf = c.coffin;
-              LB.push({ id: "coffin-" + u.id, x: ac.x + cf.x0 * k, y: ac.y + cf.top * k, w: (cf.x1 - cf.x0) * k, h: cf.top * k });
+              LB.push({ id: "coffin-" + u.id, cof: !0, x: ac.x + cf.x0 * k, y: ac.y + cf.top * k, w: (cf.x1 - cf.x0) * k, h: cf.top * k });
             }
             let P = L.find((x) => x.u.id === o),
               ACTS = ["ability", "move1", "move2", "move3", "move4"],
@@ -31375,7 +31379,7 @@ Error generating stack: ` +
                 (Pm(m, hin, n, l, d), (m.jumpHeld = jh));
                 hp && hp.dir && (m.face = hp.dir);
                 hp && !m.ov && !m.atk && ((m.action = hp.ph), (m.time = hp.t * 1e3));
-              } else Pm(m, inp, n, u.id === o ? LB : l, d);
+              } else Pm(m, inp, n, u.id === o ? LB.filter((b) => !b.cof || m.y >= b.y - 0.5) : l, d);
               ((m.atk || m.ov) && (m.face = face),
                 m.kb &&
                   ((m.x += m.kb * n * x.hm.ratio), (m.kb *= Math.pow(0.02, n)), Math.abs(m.kb) < 2 && (m.kb = 0)),
@@ -31401,7 +31405,9 @@ Error generating stack: ` +
                   hurtP(x);
             let WV = W.waves || (W.waves = { ents: [], cd: { zombie: 0, medusa: 0, bat: 0 }, side: 1, id: 0 }),
               WS = window.__ssWaveCfg || { on: !1 };
-            if (!WS.on || !P) WV.ents.length && (WV.ents = []);
+            let BT = !!window.__ssBattleOn;
+            WV.ents = WV.ents.filter((e) => (/^drac/.test(e.tp) ? BT : WS.on));
+            if ((!WS.on && !BT) || !P) WV.ents.length && (WV.ents = []);
             else {
               let lib = (id) => a.find((c) => c.id === id),
                 edge = (side, yy) => {
@@ -31417,7 +31423,14 @@ Error generating stack: ` +
                   return (WV.ents.push(e), e);
                 };
               for (let q in WV.cd) WV.cd[q] -= n;
-              if (WS.zombie && alive("zombie") < 2 && WV.cd.zombie <= 0) {
+              if (BT && !WV.ents.some((e) => /^drac/.test(e.tp))) {
+                WV.bcd = (WV.bcd ?? 0.5) - n;
+                if (WV.bcd <= 0) {
+                  let e = mk("drac1", "cv-dracula", P.m.x, P.m.y, { st: "hidden", tm: 0.3 });
+                  (e && (e.m.gone = !0), (WV.bcd = 5));
+                }
+              }
+              if (WS.on && WS.zombie && alive("zombie") < 2 && WV.cd.zombie <= 0) {
                 WV.side = -WV.side;
                 let side = WV.side,
                   gx = edge(side, P.m.y + 10),
@@ -31437,7 +31450,7 @@ Error generating stack: ` +
                 ["medusa", "cv-medusa-head", 46, 14, 3.2, 52],
                 ["bat", "cv-bat", 58, 12, 5, 16],
               ]) {
-                if (!WS[tp] || WV.cd[tp] > 0) continue;
+                if (!WS.on || !WS[tp] || WV.cd[tp] > 0) continue;
                 let fl = WV.ents.filter((e) => e.tp === tp && !e.m.dead);
                 if (fl.length >= 2 || (fl.length === 1 && Math.abs(fl[0].m.x - P.m.x) > Math.abs(fl[0].sx - P.m.x) * 0.5)) continue;
                 let side = tp === "medusa" ? 1 : (WV.bside = -(WV.bside || 1)),
@@ -31448,6 +31461,91 @@ Error generating stack: ` +
               for (let e of WV.ents) {
                 let m = e.m,
                   hm = (e.hm = Hm(e.c, i.scale, s));
+                if (e.tp === "drac1") {
+                  let c = e.c;
+                  m.inv = Math.max(0, (m.inv || 0) - n);
+                  if (m.dead) {
+                    ((m.ov.t += n), (m.action = m.ov.a), (m.time = m.ov.t * 1e3));
+                    if (m.ov.t >= m.ov.d + 0.7) {
+                      e.rm = !0;
+                      let b2 = mk("drac2", "cv-dracula-beast", m.x, m.y, { st: "idle", tm: 0, cnt: 0 });
+                      b2 && ((b2.m.face = m.face), (b2.m.grounded = !0), (b2.m.ov = { a: "hurt", t: 0, d: 0.9 }), (b2.m.inv = 1));
+                    }
+                    continue;
+                  }
+                  e.tm += n;
+                  e.st !== "fire" && (m.inv = Math.max(m.inv, 0.2));
+                  if (e.st === "hidden") {
+                    m.gone = !0;
+                    if (e.tm > 0.9) {
+                      let side = (WV.dside = -(WV.dside || 1)),
+                        cb = LB.find((b) => b.cof),
+                        g = cb ? ground(cb.x + cb.w / 2 + side * (cb.w / 2 + 40), side) : ground(P.m.x + side * 72, side);
+                      ((m.x = g[0]), (m.y = g[1]), (m.face = P.m.x >= m.x ? 1 : -1), (m.gone = !1));
+                      ((m.ov = { a: "appear", t: 0, d: sum(c, "appear") }), (e.st = "appear"), (e.tm = 0));
+                    }
+                  } else if (e.st === "appear") {
+                    if (m.ov) ((m.ov.t += n), (m.action = m.ov.a), (m.time = m.ov.t * 1e3), m.ov.t >= m.ov.d && (m.ov = null));
+                    else
+                      ((e.st = "fire"),
+                        (e.tm = 0),
+                        (m.face = P.m.x >= m.x ? 1 : -1),
+                        (m.atk = { act: "ability", nm: "fireballs", t: 0, dur: sum(c, "fireballs"), hits: new Set() }));
+                  } else if (e.st === "fire") {
+                    m.ov
+                      ? ((m.ov.t += n), (m.action = m.ov.a), (m.time = m.ov.t * 1e3), m.ov.t >= m.ov.d && (m.ov = null))
+                      : m.atk
+                        ? ((m.atk.t += n), (m.action = m.atk.nm), (m.time = m.atk.t * 1e3), m.atk.t >= m.atk.dur && (m.atk = null))
+                        : ((m.action = "idle"), (m.time += n * 1e3));
+                    e.tm > sum(c, "fireballs") + 0.8 &&
+                      ((m.atk = null), (m.ov = { a: "vanish", t: 0, d: sum(c, "vanish"), hold: !0, gone: !0 }), (e.st = "vanish"), (e.tm = 0));
+                  } else if (e.st === "vanish") {
+                    (m.ov?.a !== "vanish" && (m.ov = { a: "vanish", t: 0, d: sum(c, "vanish"), hold: !0, gone: !0 }),
+                      (m.ov.t += n),
+                      (m.action = m.ov.a),
+                      (m.time = m.ov.t * 1e3));
+                    m.ov.t >= m.ov.d && ((m.ov = null), (e.st = "hidden"), (e.tm = 0), (m.gone = !0));
+                  }
+                  continue;
+                }
+                if (e.tp === "drac2") {
+                  let c = e.c;
+                  m.inv = Math.max(0, (m.inv || 0) - n);
+                  if (m.dead) {
+                    ((m.ov.t += n), (m.action = m.ov.a), (m.time = m.ov.t * 1e3), (m.gone = !!(m.ov.gone && m.ov.t >= m.ov.d)));
+                    m.ov.t >= m.ov.d && ((e.rm = !0), (WV.bcd = 5));
+                    continue;
+                  }
+                  if (m.ov) {
+                    ((m.ov.t += n), m.ov.t >= m.ov.d && (m.ov = null));
+                    let a0 = m.ov?.a, t0 = m.ov?.t;
+                    (Pm(m, ca, n, l, hm.body), a0 && ((m.action = a0), (m.time = t0 * 1e3)));
+                    continue;
+                  }
+                  e.tm += n;
+                  let dir = P.m.x >= m.x ? 1 : -1,
+                    hin = { ...ca },
+                    act = "idle",
+                    tt = e.tm;
+                  if (e.st === "idle") {
+                    if (e.tm > 0.5) {
+                      ((e.tm = 0), (m.face = dir));
+                      e.cnt % 3 === 2
+                        ? ((e.st = "fire"), (m.atk = { act: "ability", nm: "beastFire", t: 0, dur: sum(c, "beastFire"), hits: new Set() }))
+                        : ((e.st = "raise"), (e.hd = Math.abs(P.m.x - m.x) > 30 ? dir : 0));
+                      e.cnt++;
+                    }
+                  } else if (e.st === "raise")
+                    ((act = "raise"), e.tm >= 0.3 && ((e.st = "air"), (e.tm = 0), (m.vy = 250), (m.grounded = !1), (m.support = null)));
+                  else if (e.st === "air") ((act = "air"), (hin.x = e.hd), m.grounded && e.tm > 0.05 && ((e.st = "land"), (e.tm = 0)));
+                  else if (e.st === "land") ((act = "land"), e.tm >= 0.24 && ((e.st = "idle"), (e.tm = 0)));
+                  else if (e.st === "fire")
+                    m.atk ? ((m.atk.t += n), (act = m.atk.nm), (tt = m.atk.t), m.atk.t >= m.atk.dur && (m.atk = null)) : ((e.st = "idle"), (e.tm = 0));
+                  let jh = m.jumpHeld, fc = m.face;
+                  (Pm(m, hin, n, l, hm.body), (m.jumpHeld = jh), (m.face = e.st === "air" && e.hd ? e.hd : fc), (m.action = act), (m.time = tt * 1e3));
+                  m.y < P.m.y - 400 && ((e.rm = !0), (WV.bcd = 2));
+                  continue;
+                }
                 if (m.ov) {
                   m.dead && !e.dc && ((e.dc = 1), (WV.cd[e.tp] = Math.max(WV.cd[e.tp], 2)));
                   ((m.ov.t += n), (m.action = m.ov.a), (m.time = m.ov.t * 1e3), (m.gone = !!(m.ov.gone && m.ov.t >= m.ov.d)));
@@ -31500,7 +31598,7 @@ Error generating stack: ` +
                   ((A.m.x -= (sg * ov) / 2), (Bq.m.x += (sg * ov) / 2));
                 }
               }
-            for (let x of L) {
+            for (let x of L.concat(SP)) {
               let m = x.m;
               if (!m.atk || m.dead || m.ov) continue;
               let fr = x.c.frames[Nm(x.c, m)];
@@ -31919,10 +32017,12 @@ Error generating stack: ` +
                         2 * E,
                       ));
                   }
-                let N = [
-                  ...O.members.filter((V) => V.id !== O.activeId),
-                  ...O.members.filter((V) => V.id === O.activeId),
-                ];
+                let isProp = (V) => !!O.library.find((c) => c.id === V.characterId)?.prop,
+                  N = [
+                    ...O.members.filter((V) => isProp(V)),
+                    ...O.members.filter((V) => V.id !== O.activeId && !isProp(V)),
+                    ...O.members.filter((V) => V.id === O.activeId && !isProp(V)),
+                  ];
                 for (let V of N) {
                   let j = O.library.find((J) => J.id === V.characterId);
                   if (!j) continue;
@@ -40101,18 +40201,21 @@ lucide-react/dist/esm/lucide-react.mjs:
     '<label style="display:block;margin:10px 0"><input type="checkbox" data-c="zombie"> Зомби — по 2, с разных сторон, прыгают на блоки</label>' +
     '<label style="display:block;margin:10px 0"><input type="checkbox" data-c="medusa"> Головы медузы — справа, зигзагом, по 2</label>' +
     '<label style="display:block;margin:10px 0"><input type="checkbox" data-c="bat"> Летучие мыши — волнами, по 2</label>' +
+    '<button data-k="battle" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid #555;background:#222;color:#eee;font:inherit"></button>' +
     '<button data-k="close" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid #555;background:#222;color:#eee;font:inherit">Закрыть</button>';
   document.body.appendChild(p);
   function sync() {
     var b = p.querySelector('[data-k="on"]'); b.textContent = st.on ? "Волны идут — нажми, чтобы остановить" : "Запустить волны";
     b.style.background = st.on ? "#7c3aed" : "#222";
+    var bb = p.querySelector('[data-k="battle"]'); bb.textContent = window.__ssBattleOn ? "Битва с Дракулой идёт — остановить" : "Битва с Дракулой (фаза 1 → фаза 2)"; bb.style.background = window.__ssBattleOn ? "#b91c1c" : "#222";
     ["zombie", "medusa", "bat"].forEach(function (k) { p.querySelector('[data-c="' + k + '"]').checked = st[k]; });
   }
   p.addEventListener("change", function (e) { var k = e.target.getAttribute("data-c"); if (k) { st[k] = e.target.checked; save(); sync(); } });
-  p.addEventListener("click", function (e) { var k = e.target.getAttribute("data-k"); if (k === "on") st.on = !st.on; if (k === "close") p.hidden = true; sync(); });
+  p.addEventListener("click", function (e) { var k = e.target.getAttribute("data-k"); if (k === "on") st.on = !st.on; if (k === "battle") window.__ssBattleOn = !window.__ssBattleOn; if (k === "close") p.hidden = true; sync(); });
+  window.__ssBattleToggle = function () { window.__ssBattleOn = !window.__ssBattleOn; sync(); };
   window.__ssWavesPanel = function () { sync(); p.hidden = false; };
   window.__ssWavesToggle = function () { st.on = !st.on; sync(); };
-  addEventListener("keydown", function (e) { var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return; if (!e.repeat && e.code === "KeyZ") window.__ssWavesToggle(); });
+  addEventListener("keydown", function (e) { var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return; if (!e.repeat && e.code === "KeyZ") window.__ssWavesToggle(); if (!e.repeat && e.code === "KeyN") window.__ssBattleToggle(); });
   sync();
 })();
 </script>
